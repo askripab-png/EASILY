@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-[#160b24]">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EASILY - Dossier Patient Informatisé | Hospices Civils de Lyon</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        easily: {
+                            bg: '#160B24',
+                            card: '#221138',
+                            sidebar: '#1A0C2B',
+                            accent: '#E91E63',
+                            pink: '#EC4899',
+                            violet: '#9C27B0',
+                            mauve: '#CE93D8',
+                            lightPink: '#F48FB1',
+                            border: '#3D1D5A',
+                            badgeSensitive: '#E91E63',
+                            alertBg: 'rgba(233, 30, 99, 0.15)'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom scrollbars for dark purple UI */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #160B24; }
+        ::-webkit-scrollbar-thumb { background: #3D1D5A; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #E91E63; }
+        
+        .glow-pink {
+            box-shadow: 0 0 15px rgba(233, 30, 99, 0.35);
+        }
+        .glow-mauve {
+            box-shadow: 0 0 12px rgba(206, 147, 216, 0.25);
+        }
+        .glass-panel {
+            background: rgba(34, 17, 56, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(233, 30, 99, 0.2);
+        }
+    </style>
+</head>
+<body class="h-full font-sans text-slate-100 bg-[#160B24] flex flex-col antialiased select-none overflow-hidden">
+
+    <!-- Top HCL & EASILY Header -->
+    <header class="bg-[#1A0C2B]/95 border-b border-easily-border/80 px-5 py-2.5 flex items-center justify-between shrink-0 z-30 shadow-lg">
+        <!-- Brand & Hospital Info -->
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#9C27B0] via-[#E91E63] to-[#F48FB1] p-0.5 shadow-md shadow-pink-950/50">
+                    <div class="w-full h-full bg-[#160B24] rounded-[10px] flex items-center justify-center">
+                        <i data-lucide="activity" class="w-5 h-5 text-easily-pink animate-pulse"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-extrabold text-white text-lg tracking-tight">EASILY <span class="text-easily-pink font-light">DPI</span></span>
+                        <span class="bg-pink-950/80 text-easily-mauve font-mono text-[10px] px-2 py-0.5 rounded-full border border-pink-500/30">v6.4-HCL</span>
+                    </div>
+                    <p class="text-[11px] text-easily-mauve/80 font-medium leading-none">Hospices Civils de Lyon • GHT Rhône Centre</p>
+                </div>
+            </div>
+
+            <div class="hidden lg:block h-6 w-px bg-easily-border"></div>
+
+            <!-- Patient Quick Switcher Dropdown -->
+            <div class="hidden lg:flex items-center gap-2">
+                <label class="text-xs text-easily-mauve font-medium">Patient actif :</label>
+                <select id="patientSelect" onchange="changePatient(this.value)" class="bg-[#27133F] border border-easily-border text-white text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-easily-pink cursor-pointer font-semibold shadow-inner">
+                    <option value="DUBOIS">DUBOIS Jean-Marc (IPP: 80039214)</option>
+                    <option value="MOREAU">MOREAU Élodie (IPP: 80041289)</option>
+                    <option value="BENOIT">BENOÎT Pierre (IPP: 80010943)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Practitioner Profile & Actions -->
+        <div class="flex items-center space-x-3">
+            <div class="hidden sm:flex items-center gap-3 bg-[#25123D] border border-pink-500/20 px-3.5 py-1.5 rounded-xl">
+                <div class="w-8 h-8 rounded-lg bg-pink-600/30 text-pink-300 flex items-center justify-center border border-pink-500/40">
+                    <i data-lucide="user-check" class="w-4 h-4"></i>
+                </div>
+                <div class="text-left">
+                    <div class="text-xs font-bold text-white leading-tight">Dr. C. VERNET</div>
+                    <div class="text-[10px] text-easily-mauve">Praticien Hospitalier • Soins Intensifs</div>
+                </div>
+            </div>
+
+            <button onclick="exportDPIXML()" class="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-2 shadow-md transition-all border border-pink-400/30">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span class="hidden md:inline">Exporter DPI (XML)</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Patient Identity Top Banner -->
+    <section class="bg-gradient-to-r from-[#221138] via-[#2A1245] to-[#221138] border-b border-pink-500/30 px-6 py-3 shrink-0 shadow-md">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            
+            <!-- Identity and Demographics -->
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-700 p-0.5 shadow-md">
+                        <img id="patientAvatar" src="https://placehold.co/100x100/3D1D5A/F48FB1?text=JD" alt="Patient Avatar" class="w-full h-full object-cover rounded-[14px]">
+                    </div>
+                    <span class="absolute -bottom-1 -right-1 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full border border-[#160B24]">HOSP</span>
+                </div>
+
+                <div>
+                    <div class="flex items-center gap-3">
+                        <h1 class="text-xl font-extrabold text-white tracking-tight" id="patientName">DUBOIS Jean-Marc</h1>
+                        <span id="patientSexeAge" class="bg-purple-900/60 text-pink-200 border border-pink-500/30 text-xs font-mono font-bold px-2.5 py-0.5 rounded-md">M • 64 ans (14/08/1962)</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3 text-xs font-mono text-easily-mauve mt-1">
+                        <span>IPP: <strong class="text-white" id="patientIPP">80039214</strong></span>
+                        <span class="text-pink-500">•</span>
+                        <span>NDA: <strong class="text-white" id="patientNDA">2026-99412</strong></span>
+                        <span class="text-pink-500">•</span>
+                        <span class="flex items-center gap-1 text-pink-300">
+                            <i data-lucide="bed" class="w-3.5 h-3.5"></i>
+                            <span id="patientBed">Chambre 312 - Lit A (USIC)</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Major Alerts Banner -->
+            <div class="flex items-center gap-2">
+                <div class="bg-pink-950/80 border border-pink-500/50 rounded-xl p-2.5 flex items-center gap-3 shadow-inner">
+                    <div class="w-8 h-8 rounded-lg bg-pink-600/30 text-pink-400 flex items-center justify-center shrink-0">
+                        <i data-lucide="alert-triangle" class="w-5 h-5 animate-bounce"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold uppercase tracking-wider text-pink-400">Allergies Mâjeures Signalées</div>
+                        <div class="text-xs font-bold text-white" id="patientAllergies">PÉNICILLINE • PRODUITS DE CONTRASTE IODÉS</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Main DPI Workspace -->
+    <div class="flex-1 flex min-h-0 overflow-hidden">
+
+        <!-- Left Navigation Bar -->
+        <aside class="w-64 bg-[#1A0C2B] border-r border-easily-border flex flex-col justify-between shrink-0">
+            <div class="p-3 space-y-1 overflow-y-auto">
+                <div class="px-3 py-2 text-[10px] font-bold text-easily-mauve/60 uppercase tracking-wider">Modules DPI EASILY</div>
+                
+                <button onclick="switchTab('synthese')" id="tab-btn-synthese" class="w-full text-left px-3 py-2.5 rounded-xl font-medium text-xs flex items-center gap-3 transition-all bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold shadow-md">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4 text-pink-200"></i>
+                    <span>Synthèse & Observations</span>
+                </button>
+
+                <button onclick="switchTab('prescriptions')" id="tab-btn-prescriptions" class="w-full text-left px-3 py-2.5 rounded-xl font-medium text-xs flex items-center gap-3 transition-all text-easily-mauve hover:text-white hover:bg-purple-900/40">
+                    <i data-lucide="pill" class="w-4 h-4"></i>
+                    <span>Prescriptions & Soins</span>
+                </button>
+
+                <button onclick="switchTab('sensible')" id="tab-btn-sensible" class="w-full text-left px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all text-pink-300 hover:bg-pink-950/40 border border-pink-500/30">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="shield-alert" class="w-4 h-4 text-pink-400"></i>
+                        <span>Données Sensibles (6 Lignes)</span>
+                    </div>
+                    <span class="w-2 h-2 rounded-full bg-pink-500 animate-ping"></span>
+                </button>
+
+                <button onclick="switchTab('sejour')" id="tab-btn-sejour" class="w-full text-left px-3 py-2.5 rounded-xl font-medium text-xs flex items-center gap-3 transition-all text-easily-mauve hover:text-white hover:bg-purple-900/40">
+                    <i data-lucide="hospital" class="w-4 h-4"></i>
+                    <span>Mouvements & Séjour</span>
+                </button>
+
+                <button onclick="switchTab('cr')" id="tab-btn-cr" class="w-full text-left px-3 py-2.5 rounded-xl font-medium text-xs flex items-center gap-3 transition-all text-easily-mauve hover:text-white hover:bg-purple-900/40">
+                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                    <span>Comptes-Rendus & Biologie</span>
+                </button>
+            </div>
+
+            <!-- Footer Unit Badge -->
+            <div class="p-3 bg-[#130821] border-t border-easily-border">
+                <div class="text-[10px] text-easily-mauve/70 font-mono">Service: Cardiology / USIC</div>
+                <div class="text-xs font-bold text-pink-300">Hôpital Louis Pradel - HCL</div>
+            </div>
+        </aside>
+
+        <!-- Content Area -->
+        <main class="flex-1 bg-[#160B24] p-5 overflow-y-auto">
+
+            <!-- TAB 1: SYNTHESE & OBSERVATIONS -->
+            <div id="view-synthese" class="space-y-5 block">
+                <!-- Vitals Summary Ribbon -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-[#221138] border border-pink-500/20 p-3.5 rounded-2xl flex items-center justify-between">
+                        <div>
+                            <div class="text-[11px] text-easily-mauve font-medium">Fréquence Cardiaque</div>
+                            <div class="text-xl font-extrabold text-white font-mono" id="vitalFC">84 bpm</div>
+                            <div class="text-[10px] text-emerald-400 font-medium">Rythme sinusal régulier</div>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-pink-500/10 text-pink-400 flex items-center justify-center">
+                            <i data-lucide="heart-pulse" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-[#221138] border border-pink-500/20 p-3.5 rounded-2xl flex items-center justify-between">
+                        <div>
+                            <div class="text-[11px] text-easily-mauve font-medium">Pression Artérielle</div>
+                            <div class="text-xl font-extrabold text-white font-mono" id="vitalPA">138/82 mmHg</div>
+                            <div class="text-[10px] text-pink-400 font-medium">Légère HTA systolique</div>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
+                            <i data-lucide="gauge" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-[#221138] border border-pink-500/20 p-3.5 rounded-2xl flex items-center justify-between">
+                        <div>
+                            <div class="text-[11px] text-easily-mauve font-medium">Saturation SpO2</div>
+                            <div class="text-xl font-extrabold text-white font-mono" id="vitalSpO2">97 %</div>
+                            <div class="text-[10px] text-emerald-400 font-medium">Sous 2L/min O2</div>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-pink-500/10 text-pink-400 flex items-center justify-center">
+                            <i data-lucide="wind" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-[#221138] border border-pink-500/20 p-3.5 rounded-2xl flex items-center justify-between">
+                        <div>
+                            <div class="text-[11px] text-easily-mauve font-medium">Température</div>
+                            <div class="text-xl font-extrabold text-white font-mono" id="vitalTemp">37.2 °C</div>
+                            <div class="text-[10px] text-emerald-400 font-medium">Apyrétique</div>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
+                            <i data-lucide="thermometer" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Observation Timeline & Action Bar -->
+                <div class="bg-[#221138] border border-pink-500/20 rounded-2xl p-5 shadow-lg">
+                    <div class="flex items-center justify-between mb-4 border-b border-pink-500/20 pb-3">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="stethoscope" class="w-5 h-5 text-pink-400"></i>
+                            <h2 class="text-sm font-bold text-white uppercase tracking-wider">Observations Médicales & Évolution Soignante</h2>
+                        </div>
+                        <button onclick="openNoteModal()" class="bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-md">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Nouvelle Observation</span>
+                        </button>
+                    </div>
+
+                    <!-- Observation Timeline Entries -->
+                    <div class="space-y-4" id="observationTimeline">
+                        <!-- Entries rendered dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: PRESCRIPTIONS & SOINS -->
+            <div id="view-prescriptions" class="space-y-4 hidden">
+                <div class="bg-[#221138] border border-pink-500/20 rounded-2xl p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <i data-lucide="pill" class="w-5 h-5 text-pink-400"></i>
+                            Plan de Administration des Médicaments (MAR)
+                        </h2>
+                        <span class="text-xs text-easily-mauve font-mono">Validé par Pharmacie HCL</span>
+                    </div>
+
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="border-b border-pink-500/30 text-pink-300 font-semibold bg-[#1A0C2B]">
+                                <th class="p-3">Médicament & Posologie</th>
+                                <th class="p-3">Voie</th>
+                                <th class="p-3">Matin (08h)</th>
+                                <th class="p-3">Midi (12h)</th>
+                                <th class="p-3">Soir (19h)</th>
+                                <th class="p-3">Nuit (22h)</th>
+                                <th class="p-3 text-right">Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-prescriptions" class="divide-y divide-pink-500/10 font-medium">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 3: DONNÉES SENSIBLES (6 LIGNES OBLIGATOIRES) -->
+            <div id="view-sensible" class="space-y-4 hidden">
+                
+                <div class="bg-gradient-to-r from-pink-950/90 via-[#2E1248] to-pink-950/90 border-2 border-pink-500 rounded-2xl p-5 shadow-2xl relative overflow-hidden">
+                    
+                    <div class="flex items-center justify-between mb-4 border-b border-pink-500/40 pb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-pink-600 text-white flex items-center justify-center shadow-lg shadow-pink-900/50">
+                                <i data-lucide="lock" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-base font-extrabold text-white tracking-tight">Registre des Données Sensibles & Hautement Confidentielles</h2>
+                                <p class="text-xs text-pink-200">Accès restreint au personnel habilité • Article L1110-4 Code de la Santé Publique</p>
+                            </div>
+                        </div>
+
+                        <span class="bg-pink-600 text-white font-mono text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-md">
+                            Confidentialité Renforcée
+                        </span>
+                    </div>
+
+                    <!-- THE 6 REQUIRED SENSITIVE DATA LINES HIGHLIGHTED IN PINK/MAUVE -->
+                    <div class="space-y-3 font-mono text-xs">
+                        
+                        <!-- Line 1 -->
+                        <div class="bg-[#2D1142] border-l-4 border-pink-500 p-3.5 rounded-r-xl shadow-md flex flex-col md:flex-row md:items-center justify-between gap-2 hover:bg-[#35154E] transition-all">
+                            <div class="flex items-start gap-3">
+                                <span class="bg-pink-600 text-white font-bold px-2 py-0.5 rounded text-[10px] shrink-0">LIGNE 1</span>
+                                <div>
+                                    <span class="text-pink-300 font-bold block">NIR & Empreinte Biométrique d'Identification</span>
+                                    <span class="text-white text-sm font-semibold" id="sensibleLine1">1 62 08 69 288 041 / 42 • Empreinte génétique enregistrée au FNAG #HCL-800392</span>
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-easily-mauve bg-pink-950/80 px-2 py-1 rounded border border-pink-500/30 shrink-0">Vérifié RNIPP</span>
+                        </div>
+
+                        <!-- Line 2 -->
+                        <div class="bg-[#2D1142] border-l-4 border-purple-500 p-3.5 rounded-r-xl shadow-md flex flex-col md:flex-row md:items-center justify-between gap-2 hover:bg-[#35154E] transition-all">
+                            <div class="flex items-start gap-3">
+                                <span class="bg-purple-600 text-white font-bold px-2 py-0.5 rounded text-[10px] shrink-0">LIGNE 2</span>
+                                <div>
+                                    <span class="text-purple-300 font-bold block">Diagnostic Médical Hautement Confidentiel</span>
+                                    <span class="text-white text-sm font-semibold" id="sensibleLine2">Séropositivité VIH-1 (Découverte 2018) sous Tri-thérapie Biktarvy • Charge virale indétectable</span>
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-purple-300 bg-purple-950/80 px-2 py-1 rounded border border-purple-500/30 shrink-0">Secret Médical Stricte</span>
+                        </div>
+
+                        <!-- Line 3 -->
+                        <div class="bg-[#2D1142] border-l-4 border-pink-500 p-3.5 rounded-r-xl shadow-md flex flex-col md:flex-row md:items-center justify-between gap-2 hover:bg-[#35154E] transition-all">
+                            <div class="flex items-start gap-3">
+                                <span class="bg-pink-600 text-white font-bold px-2 py-0.5 rounded text-[10px] shrink-0">LIGNE 3</span>
+                                <div>
+                                    <span class="text-pink-300 font-bold block">Antécédents Psychiatriques & Tentatives d'Autolyse</span>
+                                    <span class="text-white text-sm font-semibold" id="sensibleLine3">Trouble Bipolaire Type II • Suivi au Centre de Santé Mentale Lyon-Sud (Hospitalisation 2021)</span>
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-easily-mauve bg-pink-950/80 px-2 py-1 rounded border border-pink-500/30 shrink-0">Suivi Psychiatrique</span>
+                        </div>
+
+                        <!-- Line 4 -->
+                        <div class="bg-[#2D1142] border-l-4 border-purple-500 p-3.5 rounded-r-xl shadow-md flex flex-col md:flex-row md:items-center justify-between gap-2 hover:bg-[#35154E] transition-all">
+                            <div class="flex items-start gap-3">
+                                <span class="bg-purple-600 text-white font-bold px-2 py-0.5 rounded text-[10px] shrink-0">LIGNE 4</span>
+                                <div>
+                                    <span class="text-purple-300 font-bold block">Statut Addictologique & Traitement de Substitution</span>
+                                    <span class="text-white text-sm font-semibold" id="sensibleLine4">Traitement de substitution Méthadone (60mg/jour) • Suivi CSAPA Lyon-Confluence</span>
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-purple-300 bg-purple-950/80 px-2 py-1 rounded border border-purple-500/30 shrink-0">Addictologie CSAPA</span>
+                        </div>
+
+                        <!-- Line 5 -->
+                        <div class="bg-[#2D1142] border-l-4 border-pink-500 p-3.5 rounded-r-xl shadow-md flex flex-col md:flex-row md:items-center justify-between gap-2 hover:bg-[#35154E] transition-all">
+                            <div class="flex items-start gap-3">
+                                <span class="bg-pink-600 text-white font-bold px-2 py-0.5 rounded text-[10px] shrink-0">LIGNE 5</span>
+                                <div>
+                                    <span class="text-pink-300 font-bold block">Mesure de Protection Juridique</span>
+                                    <span class="text-white text-sm font-semibold" id="sensibleLine5">Tutelle Renforcée accordée par le Tribunal de Lyon • Curateur: Maître V. PERRIN (04 72 10 XX XX)</span>
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-easily-mauve bg-pink-950/80 px-2 py-1 rounded border border-pink-500/30 shrink-0">Protection Juridique</span>
+                        </div>
+
+                        <!-- Line 6 -->
+                        <div class="bg-[#2D1142] border-l-4 border-purple-500 p-3.5 rounded-r-xl shadow-md flex flex-col md:flex-row md:items-center justify-between gap-2 hover:bg-[#35154E] transition-all">
+                            <div class="flex items-start gap-3">
+                                <span class="bg-purple-600 text-white font-bold px-2 py-0.5 rounded text-[10px] shrink-0">LIGNE 6</span>
+                                <div>
+                                    <span class="text-purple-300 font-bold block">Données Génétiques & Directives Anticipées</span>
+                                    <span class="text-white text-sm font-semibold" id="sensibleLine6">Mutation BRCA1 identifiée • Directives anticipées déposées (Ne pas réanimer / DNR en cas d'ACR)</span>
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-purple-300 bg-purple-950/80 px-2 py-1 rounded border border-purple-500/30 shrink-0">DNR / Directives</span>
+                        </div>
+
+                    </div>
+
+                    <!-- Audit Trail footer inside box -->
+                    <div class="mt-4 pt-3 border-t border-pink-500/20 text-[11px] text-easily-mauve flex justify-between items-center font-mono">
+                        <span>Traçabilité d'accès CNIL : Consultation enregistrée sous ID-LOG-2026-99042</span>
+                        <span class="text-pink-400 font-bold">Abonné aux alertes HCL Security</span>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- TAB 4: SEJOUR & MOUVEMENTS -->
+            <div id="view-sejour" class="space-y-4 hidden">
+                <div class="bg-[#221138] border border-pink-500/20 rounded-2xl p-5">
+                    <h2 class="text-sm font-bold text-white uppercase tracking-wider mb-3">Historique des Mouvements du Séjour</h2>
+                    <div class="space-y-3 text-xs" id="sejourTimeline">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: COMPTES-RENDUS -->
+            <div id="view-cr" class="space-y-4 hidden">
+                <div class="bg-[#221138] border border-pink-500/20 rounded-2xl p-5">
+                    <h2 class="text-sm font-bold text-white uppercase tracking-wider mb-3">Comptes-Rendus Médicaux & Laboratoire</h2>
+                    <div class="space-y-3 text-xs" id="crList">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- New Observation Modal -->
+    <div id="modalNote" class="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-[#221138] border border-pink-500/40 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
+            <div class="p-4 border-b border-pink-500/30 flex justify-between items-center bg-[#1A0C2B]">
+                <h3 class="font-bold text-white text-sm">Ajouter une Observation Médicale (EASILY)</h3>
+                <button onclick="closeNoteModal()" class="text-pink-300 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="saveNote(event)" class="p-4 space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-easily-mauve mb-1">Type d'Observation</label>
+                    <select id="noteType" class="w-full bg-[#1A0C2B] border border-pink-500/30 rounded-xl p-2 text-xs text-white">
+                        <option value="Visite Quotidienne">Visite Quotidienne Sénior</option>
+                        <option value="Évolution Infirmière">Évolution Infirmière (IDE)</option>
+                        <option value="Avis Spécialisé">Avis Spécialisé (Cardiologie/USIC)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-easily-mauve mb-1">Texte de l'Observation</label>
+                    <textarea id="noteText" required rows="4" placeholder="Saisir les constatations cliniques..." class="w-full bg-[#1A0C2B] border border-pink-500/30 rounded-xl p-2 text-xs text-white focus:outline-none focus:border-pink-500"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeNoteModal()" class="px-4 py-2 bg-purple-950 text-pink-200 rounded-xl text-xs font-semibold">Annuler</button>
+                    <button type="submit" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-xl text-xs font-bold shadow-md">Enregistrer dans DPI</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript Data & Interactivity -->
+    <script>
+        /* Patient Data Store */
+        const patientsData = {
+            DUBOIS: {
+                name: "DUBOIS Jean-Marc",
+                sexeAge: "M • 64 ans (14/08/1962)",
+                ipp: "80039214",
+                nda: "2026-99412",
+                bed: "Chambre 312 - Lit A (USIC)",
+                allergies: "PÉNICILLINE • PRODUITS DE CONTRASTE IODÉS",
+                avatar: "https://placehold.co/100x100/3D1D5A/F48FB1?text=JD",
+                vitals: { fc: "84 bpm", pa: "138/82 mmHg", spo2: "97 %", temp: "37.2 °C" },
+                sensible: [
+                    "1 62 08 69 288 041 / 42 • Empreinte génétique enregistrée au FNAG #HCL-800392",
+                    "Séropositivité VIH-1 (Découverte 2018) sous Tri-thérapie Biktarvy • Charge virale indétectable",
+                    "Trouble Bipolaire Type II • Suivi au Centre de Santé Mentale Lyon-Sud (Hospitalisation 2021)",
+                    "Traitement de substitution Méthadone (60mg/jour) • Suivi CSAPA Lyon-Confluence",
+                    "Tutelle Renforcée accordée par le Tribunal de Lyon • Curateur: Maître V. PERRIN (04 72 10 XX XX)",
+                    "Mutation BRCA1 identifiée • Directives anticipées déposées (Ne pas réanimer / DNR en cas d'ACR)"
+                ],
+                observations: [
+                    { date: "30/09/2026 - 10:15", author: "Dr. C. VERNET", title: "Visite Sénior USIC", text: "Patient stable sur le plan hémodynamique. Disparition des douleurs thoraciques sous dérivés nitrés. Troponine à 420 ng/L en régression. Maintien du traitement antiagrégant." },
+                    { date: "30/09/2026 - 07:30", author: "IDE M. BERNARD", title: "Relève Matinale IDE", text: "Nuit calme sans événement aigu. Constantes stables. ECG de contrôle à 08h réalisé et transmis au médecin." }
+                ],
+                prescriptions: [
+                    { name: "Cordarone 200mg (Amiodarone)", route: "ORALE", m: "1 cp", mi: "-", s: "1 cp", n: "-", status: "En cours" },
+                    { name: "Lovenox 0.6ml (Enoxaparine)", route: "SC", m: "1 inj", mi: "-", s: "1 inj", n: "-", status: "En cours" },
+                    { name: "Kardegic 75mg (Aspirine)", route: "ORALE", m: "1 sachet", mi: "-", s: "-", n: "-", status: "En cours" }
+                ]
+            },
+            MOREAU: {
+                name: "MOREAU Élodie",
+                sexeAge: "F • 42 ans (03/11/1983)",
+                ipp: "80041289",
+                nda: "2026-99501",
+                bed: "Chambre 204 - Lit B (Cardio)",
+                allergies: "LATEX • SULFALAMIDES",
+                avatar: "https://placehold.co/100x100/3D1D5A/F48FB1?text=EM",
+                vitals: { fc: "72 bpm", pa: "120/75 mmHg", spo2: "99 %", temp: "36.8 °C" },
+                sensible: [
+                    "2 83 11 69 112 089 / 18 • Empreinte biométrique enregistrée dossier HCL #MOREAU",
+                    "Antécédents d'Hépatite C guérie après traitement AVD en 2019",
+                    "Épisode dépressif sévère post-partum avec suivi HDJ Vinatier 2022",
+                    "Dépendance tabagique sévère (30 PA) • Substitution par patchs Nicotine 21mg",
+                    "Sauvegarde de justice temporaire réclamée par le service social",
+                    "Directives anticipées enregistrées : Réanimation autorisée sans restriction"
+                ],
+                observations: [
+                    { date: "30/09/2026 - 09:00", author: "Dr. A. DUMONT", title: "Consultation Post-Écho", text: "Feve conservée à 60%. Bon contrôle de la tension artérielle. Autorisation de sortie envisagée à J+2." }
+                ],
+                prescriptions: [
+                    { name: "Tritace 2.5mg (Ramipril)", route: "ORALE", m: "1 cp", mi: "-", s: "-", n: "-", status: "En cours" },
+                    { name: "Tahor 20mg (Atorvastatine)", route: "ORALE", m: "-", mi: "-", s: "1 cp", n: "-", status: "En cours" }
+                ]
+            },
+            BENOIT: {
+                name: "BENOÎT Pierre",
+                sexeAge: "M • 78 ans (22/01/1948)",
+                ipp: "80010943",
+                nda: "2026-98210",
+                bed: "Chambre 310 - Lit A (USIC)",
+                allergies: "AUCUNE ALLERGIE CONNU",
+                avatar: "https://placehold.co/100x100/3D1D5A/F48FB1?text=PB",
+                vitals: { fc: "98 bpm", pa: "145/90 mmHg", spo2: "94 %", temp: "37.5 °C" },
+                sensible: [
+                    "1 48 01 69 004 012 / 88 • Identifiant Sécurité Sociale d'Origine",
+                    "Diagnostic de démence vasculaire débutante sous Aricept 10mg",
+                    "Antécédents d'Éthylisme chronique sevré • Suivi alcoologie HCL",
+                    "Pleine capacité juridique sous mandat de protection future activé",
+                    "Mesure de protection de personne vulnérable HCL active",
+                    "Refus transfractaire de transfusion sanguine (Témoins de Jéhovah)"
+                ],
+                observations: [
+                    { date: "30/09/2026 - 11:30", author: "Dr. C. VERNET", title: "Avis Réanimation", text: "Insuffisance cardiaque décompensée. Majoration du traitement diurétique par IV." }
+                ],
+                prescriptions: [
+                    { name: "Lasilix 40mg (Furosémide)", route: "IV", m: "1 amp", mi: "1 amp", s: "-", n: "-", status: "En cours" }
+                ]
+            }
+        };
+
+        let currentPatientKey = "DUBOIS";
+
+        function changePatient(key) {
+            currentPatientKey = key;
+            const data = patientsData[key];
+
+            document.getElementById("patientName").innerText = data.name;
+            document.getElementById("patientSexeAge").innerText = data.sexeAge;
+            document.getElementById("patientIPP").innerText = data.ipp;
+            document.getElementById("patientNDA").innerText = data.nda;
+            document.getElementById("patientBed").innerText = data.bed;
+            document.getElementById("patientAllergies").innerText = data.allergies;
+            document.getElementById("patientAvatar").src = data.avatar;
+
+            // Vitals
+            document.getElementById("vitalFC").innerText = data.vitals.fc;
+            document.getElementById("vitalPA").innerText = data.vitals.pa;
+            document.getElementById("vitalSpO2").innerText = data.vitals.spo2;
+            document.getElementById("vitalTemp").innerText = data.vitals.temp;
+
+            // 6 Sensitive Lines
+            for (let i = 0; i < 6; i++) {
+                document.getElementById(`sensibleLine${i+1}`).innerText = data.sensible[i];
+            }
+
+            renderObservations();
+            renderPrescriptions();
+            renderSejour();
+            renderCR();
+        }
+
+        function renderObservations() {
+            const container = document.getElementById("observationTimeline");
+            const obs = patientsData[currentPatientKey].observations;
+            container.innerHTML = obs.map(o => `
+                <div class="bg-[#1A0C2B] border border-pink-500/20 p-4 rounded-xl space-y-1">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold text-pink-300">${o.title} • ${o.author}</span>
+                        <span class="font-mono text-easily-mauve/70 text-[11px]">${o.date}</span>
+                    </div>
+                    <p class="text-xs text-white leading-relaxed">${o.text}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderPrescriptions() {
+            const tbody = document.getElementById("tbody-prescriptions");
+            const rx = patientsData[currentPatientKey].prescriptions;
+            tbody.innerHTML = rx.map(r => `
+                <tr class="hover:bg-purple-900/30">
+                    <td class="p-3 font-bold text-white">${r.name}</td>
+                    <td class="p-3 font-mono text-pink-300">${r.route}</td>
+                    <td class="p-3 font-mono text-slate-300">${r.m}</td>
+                    <td class="p-3 font-mono text-slate-300">${r.mi}</td>
+                    <td class="p-3 font-mono text-slate-300">${r.s}</td>
+                    <td class="p-3 font-mono text-slate-300">${r.n}</td>
+                    <td class="p-3 text-right">
+                        <span class="bg-emerald-950 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full text-[10px] font-bold">${r.status}</span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderSejour() {
+            const container = document.getElementById("sejourTimeline");
+            container.innerHTML = `
+                <div class="bg-[#1A0C2B] p-3 rounded-xl border border-pink-500/20 flex justify-between">
+                    <span>Admission Soins Intensifs (USIC Pradel)</span>
+                    <span class="font-mono text-pink-300">28/09/2026 à 14:22</span>
+                </div>
+                <div class="bg-[#1A0C2B] p-3 rounded-xl border border-pink-500/20 flex justify-between">
+                    <span>Passage Urgences Hôpital Edouard Herriot</span>
+                    <span class="font-mono text-pink-300">28/09/2026 à 10:15</span>
+                </div>
+            `;
+        }
+
+        function renderCR() {
+            const container = document.getElementById("crList");
+            container.innerHTML = `
+                <div class="bg-[#1A0C2B] p-3 rounded-xl border border-pink-500/20 flex justify-between items-center">
+                    <div>
+                        <div class="font-bold text-white">Bilan Biologique Sanguin Complète</div>
+                        <div class="text-[10px] text-easily-mauve">Troponine T, NT-proBNP, Ionogramme</div>
+                    </div>
+                    <span class="bg-purple-900 text-pink-200 px-2.5 py-1 rounded-lg text-xs font-mono">PDF Disponble</span>
+                </div>
+            `;
+        }
+
+        function switchTab(tabKey) {
+            ['synthese', 'prescriptions', 'sensible', 'sejour', 'cr'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                document.getElementById(`tab-btn-${t}`).className = "w-full text-left px-3 py-2.5 rounded-xl font-medium text-xs flex items-center gap-3 transition-all text-easily-mauve hover:text-white hover:bg-purple-900/40";
+            });
+
+            document.getElementById(`view-${tabKey}`).classList.remove('hidden');
+            document.getElementById(`tab-btn-${tabKey}`).className = "w-full text-left px-3 py-2.5 rounded-xl font-medium text-xs flex items-center gap-3 transition-all bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold shadow-md";
+        }
+
+        function openNoteModal() { document.getElementById("modalNote").classList.remove("hidden"); }
+        function closeNoteModal() { document.getElementById("modalNote").classList.add("hidden"); }
+
+        function saveNote(e) {
+            e.preventDefault();
+            const type = document.getElementById("noteType").value;
+            const text = document.getElementById("noteText").value;
+            
+            patientsData[currentPatientKey].observations.unshift({
+                date: new Date().toLocaleDateString('fr-FR') + " - " + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}),
+                author: "Dr. C. VERNET",
+                title: type,
+                text: text
+            });
+
+            renderObservations();
+            closeNoteModal();
+            document.getElementById("noteText").value = "";
+        }
+
+        function exportDPIXML() {
+            const data = patientsData[currentPatientKey];
+            let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<DPI_EASILY_HCL exportDate="${new Date().toISOString()}">\n`;
+            xml += `  <Patient ipp="${data.ipp}" nda="${data.nda}">\n`;
+            xml += `    <NomPrenom>${data.name}</NomPrenom>\n`;
+            xml += `    <SexeAge>${data.sexeAge}</SexeAge>\n`;
+            xml += `    <Lit>${data.bed}</Lit>\n`;
+            xml += `    <Allergies>${data.allergies}</Allergies>\n`;
+            xml += `    <DonneesSensibles6Lignes>\n`;
+            data.sensible.forEach((line, idx) => {
+                xml += `      <Ligne_${idx+1}>${line}</Ligne_${idx+1}>\n`;
+            });
+            xml += `    </DonneesSensibles6Lignes>\n`;
+            xml += `  </Patient>\n</DPI_EASILY_HCL>`;
+
+            const blob = new Blob([xml], { type: 'application/xml' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `easily_hcl_dossier_${data.ipp}.xml`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        window.onload = function() {
+            lucide.createIcons();
+            changePatient("DUBOIS");
+        };
+    </script>
+</body>
+</html>
